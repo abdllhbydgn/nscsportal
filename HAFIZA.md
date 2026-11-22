@@ -969,3 +969,6 @@ Yöntem: Playwright tarayıcısı (scratchpad `audit/crawl.js`): 38 ekran × TR/
 - Hakkımızda kartları: Sertifikalar ve Kalite Güvence kartı gömülü görsel kullanır (`sertifikalar/kapak_nscs.jpg`, `hakkimizda/kalite_guvence_kart.jpg`); geniş kapak fotoğrafları kesilmeden tam görünür (`_aboutFitBanner`). Hakkımızda'da "EMS" geçmemeli (Başkan Mesajı içeriği temizlendi).
 - Şirket Profili sol menüden/ziyaretçi anasayfasından kaldırıldı; Admin Paneli > Site İçeriği altında. Genel Durum üst 5 özet kart (`.hpx-k`) uzun/dikey.
 - Arapça Öğren (v62) ve nscstr üst çubuğuna Mısır + Türkiye saatleri eklendi.
+
+## 22.11.2026 — Yasal Dökümanlar (Admin Paneli)
+- Admin Paneli'nde yeni bölüm "Yasal Dökümanlar" (`legalDocs`, `_ahubOpenLegalDocs`): Prosedürler kütüphanesindeki (store `legal`) adında "yasal/legal" geçen klasör(ler) burada açılır; Prosedürler listesinden gizlenir (`_legalFolderFilter`, yalnız görünüm; bulut verisi taşınmadı/silinmedi). Şirket Profili Admin Paneli'nde duruyor, sol menüde yok (kullanıcı kararı).

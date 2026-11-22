@@ -57004,6 +57004,14 @@ let currentLegalFolderId = null;
 let _docUploadTargetId = null;
 // Klasörlü belge arşivleri: Prosedürler ("legal") ve NSCS Form Arşivi ("forms") / Folder-based archives: Procedures and NSCS Form Archive
 function _isFolderStore(k) { return k === "legal" || k === "forms" || k === "risk"; }
+// Yasal Dökümanlar: adında "yasal"/"legal" geçen klasörler yalnız Admin Paneli > Yasal Dökümanlar'da görünür; Prosedürler listesinden gizlenir (veri taşınmaz/silinmez) /
+// Folders whose name contains "yasal"/"legal" show only in Admin Panel > Legal Documents and are hidden from the Procedures list (data is never moved or deleted)
+let _legalAdminMode = false;
+function _isLegalFolderName(n) { return /yasal|legal/i.test(String(n || "")); }
+function _legalFolderFilter(k, arr) {
+  if (k !== "legal") return arr;
+  return (arr || []).filter(f => _legalAdminMode ? _isLegalFolderName(f && f.name) : !_isLegalFolderName(f && f.name));
+}
 function _folderRoot(k) { return k === "forms" ? formsFolders : k === "risk" ? riskAnalysesDocs : legalDocumentsDocs; }
 function _folderStoreTitle(k) { return k === "risk" ? t3("⚠️ Üretim Risk Analizleri", "⚠️ Production Risk Analyses", "⚠️ تحليلات مخاطر الإنتاج") : k === "forms" ? t3("📝 NSCS Form Arşivi", "📝 NSCS Form Archive", "📝 أرشيف نماذج NSCS") : t3("⚖️ Prosedürler", "⚖️ Procedures", "⚖️ الإجراءات"); }
 function _folderUnit(k, n) { return k === "forms" ? (n === 1 ? t3("form", "form", "نموذج") : t3("form", "forms", "نماذج")) : (n === 1 ? t3("belge", "document", "مستند") : t3("belge", "documents", "مستندات")); }
@@ -57127,6 +57135,7 @@ function openDocumentLibrary(storeKey, legacy) {
     return;
   }
   currentDocLibraryStore = storeKey;
+  _legalAdminMode = false;
   _pendingLegalFolder = null;
   saveLastView("docLibrary", {
     storeKey: storeKey
@@ -62005,7 +62014,7 @@ function _riskFolderSetPhoto(folderId, file) {
 }
 function renderLegalFolderGrid() {
   const _SK = currentDocLibraryStore === "forms" ? "forms" : currentDocLibraryStore === "risk" ? "risk" : "legal";
-  const _FR = _folderRoot(_SK);
+  const _FR = _legalFolderFilter(_SK, _folderRoot(_SK));
   if (_pendingLegalFolder && _pendingLegalFolder.store === currentDocLibraryStore && _FR.some(f => f.id === _pendingLegalFolder.id)) { const _pid = _pendingLegalFolder.id; _pendingLegalFolder = null; openLegalFolder(_pid); return; }
   const grid = document.getElementById("doc-library-grid");
   if (!grid) return;
@@ -70348,9 +70357,30 @@ const ADMIN_HUB_ACTIONS = {
   custDash: () => adminHubGo("custDash"),
   track: () => adminHubGo("track"),
   advisorMeetings: () => openAdvisorMeetings(),
+  legalDocs: () => _ahubOpenLegalDocs(),
   companyProfile: () => openCompanyProfile(),
   advances: () => openAvans('pending')
 };
+// Yasal Dökümanlar: Prosedürler kütüphanesindeki yasal klasör(ler)i Admin Paneli içinde açar; bulut verisi gelene kadar bekler /
+// Legal Documents: opens the legal folder(s) of the library inside the Admin Panel; waits until the cloud data arrives
+function _ahubOpenLegalDocs() {
+  openDocumentLibrary("legal");
+  _legalAdminMode = true;
+  let tries = 0;
+  const go = () => {
+    if (!_legalAdminMode) return;
+    const fs = (_folderRoot("legal") || []).filter(f => _isLegalFolderName(f && f.name));
+    if (fs.length === 1) { openLegalFolder(fs[0].id); return; }
+    if (fs.length > 1 || tries >= 24) {
+      try { renderLegalFolderGrid(); } catch (e) {}
+      if (!fs.length) { try { showEmsToast(t3("Yasal belge klasörü bulunamadı. Bu bölümde yeni klasör açabilirsiniz.", "No legal documents folder found. You can create a new folder here.", "ما فيش مجلد للمستندات القانونية. تقدر تفتح مجلد جديد هنا.")); } catch (e) {} }
+      return;
+    }
+    tries++;
+    setTimeout(go, 250);
+  };
+  go();
+}
 function adminHubRun(key, fromNav) {
   if (!_adminHubUnlocked()) return;
   if (AHUB_TOOLS[key]) {
@@ -70379,6 +70409,7 @@ const AHUB_TOOLS = {
   backupHistory: { id: "backup-history-modal", close: () => closeBackupHistory(), name: () => t3("Yedekleme Geçmişi", "Backup History", "سجل النسخ الاحتياطي") },
   finance: { id: "finance-modal", close: () => closeFinance(), name: () => t3("Gelir & Gider", "Income & Expenses", "الإيرادات والمصروفات") },
   companyProfile: { id: "company-profile-overlay", close: () => closeCompanyProfile(), name: () => t3("Şirket Profili", "Company Profile", "ملف الشركة") },
+  legalDocs: { id: "document-library-modal", close: () => { _legalAdminMode = false; closeDocumentLibrary(); }, name: () => t3("Yasal Dökümanlar", "Legal Documents", "المستندات القانونية") },
   advisorMeetings: { id: "advisor-meeting-modal", close: () => closeAdvisorMeetings(), name: () => t3("Danışman Toplantı Tutanakları", "Consultant Meeting Minutes", "محاضر اجتماعات الاستشاري") }
 };
 let _ahubTool = null;   // { key, el, timer }
@@ -70746,6 +70777,7 @@ const AHUB_MENU = [
   { sec: "content", ic: "palette", sub: [ "Yazıları, menüyü ve rapor bilgilerini kendiniz değiştirin — veriler etkilenmez", "Change texts, menu and report details yourself — data is not affected", "غيّر النصوص والقائمة وبيانات التقارير بنفسك" ], name: [ "Site İçeriği", "Site Content", "محتوى الموقع" ], items: [ "texts", "about", "companyProfile", "menu", "report", "announcement", "design", "log" ] },
   { sec: "data", ic: "database", sub: [ "Verilerinizi koruma ve geri yükleme", "Protect and restore your data", "احمي بياناتك واستعيدها" ], name: [ "Veri & Yedek", "Data & Backup", "البيانات والنسخ الاحتياطي" ], items: [ "dataLog", "backup", "fullBackup", "backupHistory", "restore" ] },
   { sec: "fin", ic: "chart", sub: [ "Takip ve paylaşım", "Tracking and sharing", "المتابعة والمشاركة" ], name: [ "Finans & Paylaşım", "Finance & Sharing", "المالية والمشاركة" ], items: [ "advances", "finance", "copyLink" ] },
+  { sec: "legal", ic: "shield", sub: [ "Ticaret sicili, vergi levhası, izin ve yasal uyum belgeleri", "Trade registry, tax plate, permits and legal compliance documents", "السجل التجاري واللوحة الضريبية والتراخيص ووثائق الامتثال القانوني" ], name: [ "Yasal Dökümanlar", "Legal Documents", "المستندات القانونية" ], items: [ "legalDocs" ] },
   { sec: "meetings", ic: "file", sub: [ "Danışman ve toplantı tutanakları", "Consultant and meeting minutes", "محاضر الاستشاري والاجتماعات" ], name: [ "Toplantılar", "Meetings", "الاجتماعات" ], items: [ "advisorMeetings" ] }
 ];
 const AHUB_ITEMS = {
@@ -70770,6 +70802,7 @@ const AHUB_ITEMS = {
   copyLink: { ic: "link", name: [ "Bağlantıyı Kopyala", "Copy Link", "نسخ الرابط" ], sub: [ "Bu ekranın adresini paylaş", "Share this screen's link", "مشاركة رابط الشاشة دي" ] },
   advances: { ic: "wallet", name: [ "Avans Talepleri", "Advance Requests", "طلبات السلفة" ], sub: [ "Personelin avans talepleri: onayla, imzala, gönder", "Staff advance requests: approve, sign, send", "طلبات السلفة من الموظفين: وافق ووقّع وابعت" ] },
   companyProfile: { ic: "building", name: [ "Şirket Profili", "Company Profile", "ملف الشركة" ], sub: [ "Tanıtım, organizasyon şeması, kurumsal sunum belgeleri", "Introduction, org chart and corporate presentation documents", "التعريف والهيكل التنظيمي والعرض المؤسسي" ] },
+  legalDocs: { ic: "shield", name: [ "Yasal Dökümanlar", "Legal Documents", "المستندات القانونية" ], sub: [ "Tüm EMS yasal belgeleri tek yerde", "All legal documents in one place", "كل المستندات القانونية في مكان واحد" ] },
   advisorMeetings: { ic: "file", name: [ "Danışman Toplantı Tutanakları", "Consultant Meeting Minutes", "محاضر اجتماعات الاستشاري" ], sub: [ "Madde, karar ve termin takibi", "Item, decision and due-date tracking", "متابعة البنود والقرارات والمواعيد" ] }
 };
 // Simge: "n:<ad>" = kabuğun çizgi simgesi (sol menüdekiyle aynı set), yoksa merkezin kendi simgesi
@@ -86074,7 +86107,7 @@ function mtWeekMail() {
   document.addEventListener("visibilitychange", sync);
   setTimeout(sync, 800);
 })();
-const EMS_BUILD = "2026-11-22 12:12";
+const EMS_BUILD = "2026-11-22 14:24";
 (function () {
   const t = (tr, en, ar) => typeof t3 === "function" ? t3(tr, en, ar) : tr;
   // Sürüm saati İstanbul saatiyle (UTC+3, yaz/kış saati yok) yazılır; ekranda izleyenin yerel saatine çevrilir (Mısır'da kış saati UTC+2 olunca 1 saat fark oluşuyordu) /
