@@ -4393,10 +4393,6 @@ html.ems-sade .ring-card.sec-donut-card:not(#site-announcement-popup *):not(#ann
         <span class="nav-emoji">🏢</span>
         <span data-i18n="nav_about_us">Hakkımızda / About Us</span>
       </button>
-      <button class="side-nav-item visitor-allowed" onclick="try{ openDocumentLibrary('company'); }catch(e){ console.error('Şirket Profili açma hatası:', e); alert(t3('Hata: ', 'Error: ', 'خطأ: ') + e.message); }">
-        <span class="nav-emoji">🏢</span>
-        <span data-i18n="nav_company_profile">Şirket Profili / Company Profile</span>
-      </button>
       <button class="side-nav-item visitor-allowed" onclick="try{ openCertHub(); }catch(e){ console.error('Sertifikalar açma hatası:', e); alert(t3('Hata: ', 'Error: ', 'خطأ: ') + e.message); }">
         <span class="nav-emoji">🏅</span>
         <span data-i18n="nav_certificates">Sertifikalar / Certificates</span>
@@ -4749,12 +4745,6 @@ html.ems-sade .ring-card.sec-donut-card:not(#site-announcement-popup *):not(#ann
             <div class="visitor-home-card-icon">🏅</div>
             <div class="visitor-home-card-title" data-i18n="visitor_card_certs">Sertifikalar</div>
             <div class="visitor-home-card-sub" data-i18n="visitor_card_certs_sub">Akreditasyonlarımızı görüntüleyin</div>
-            <div class="visitor-home-card-arrow">→</div>
-          </div>
-          <div class="visitor-home-card" style="--card-c1:#14B8A6; --card-c2:#0F766E; animation-delay:.30s;" onclick="openCompanyProfile()">
-            <div class="visitor-home-card-icon">🏢</div>
-            <div class="visitor-home-card-title" data-i18n="visitor_card_profile">Şirket Profili</div>
-            <div class="visitor-home-card-sub" data-i18n="visitor_card_profile_sub">Kurumsal bilgi dosyamız</div>
             <div class="visitor-home-card-arrow">→</div>
           </div>
         </div>
@@ -70358,6 +70348,7 @@ const ADMIN_HUB_ACTIONS = {
   custDash: () => adminHubGo("custDash"),
   track: () => adminHubGo("track"),
   advisorMeetings: () => openAdvisorMeetings(),
+  companyProfile: () => openCompanyProfile(),
   advances: () => openAvans('pending')
 };
 function adminHubRun(key, fromNav) {
@@ -70387,6 +70378,7 @@ const AHUB_TOOLS = {
   announcement: { id: "ann-fx-modal", close: () => closeAnnFixedEditor(), name: () => t3("Bilgilendirme Pop-up'ı", "Information Pop-up", "نافذة المعلومات") },
   backupHistory: { id: "backup-history-modal", close: () => closeBackupHistory(), name: () => t3("Yedekleme Geçmişi", "Backup History", "سجل النسخ الاحتياطي") },
   finance: { id: "finance-modal", close: () => closeFinance(), name: () => t3("Gelir & Gider", "Income & Expenses", "الإيرادات والمصروفات") },
+  companyProfile: { id: "company-profile-overlay", close: () => closeCompanyProfile(), name: () => t3("Şirket Profili", "Company Profile", "ملف الشركة") },
   advisorMeetings: { id: "advisor-meeting-modal", close: () => closeAdvisorMeetings(), name: () => t3("Danışman Toplantı Tutanakları", "Consultant Meeting Minutes", "محاضر اجتماعات الاستشاري") }
 };
 let _ahubTool = null;   // { key, el, timer }
@@ -70751,7 +70743,7 @@ function todoDelete(id) { const x = _todo.items.find(i => i.id === id); if (!x |
 const AHUB_MENU = [
   { sec: "cust", ic: "chart", sub: [ "Tüm müşterilerin durumu tek ekranda", "All customers at a glance", "حالة كل العملاء في شاشة واحدة" ], name: [ "Müşteriler", "Customers", "العملاء" ], items: [ "custDash", "track" ] },
   { sec: "users", ic: "shield", sub: [ "Kimin neyi görüp değiştirebileceği", "Who can see and change what", "مين يقدر يشوف ويعدّل" ], name: [ "Kullanıcılar & Yetki", "Users & Access", "المستخدمين والصلاحيات" ], items: [ "approvals", "users", "contacts" ] },
-  { sec: "content", ic: "palette", sub: [ "Yazıları, menüyü ve rapor bilgilerini kendiniz değiştirin — veriler etkilenmez", "Change texts, menu and report details yourself — data is not affected", "غيّر النصوص والقائمة وبيانات التقارير بنفسك" ], name: [ "Site İçeriği", "Site Content", "محتوى الموقع" ], items: [ "texts", "about", "menu", "report", "announcement", "design", "log" ] },
+  { sec: "content", ic: "palette", sub: [ "Yazıları, menüyü ve rapor bilgilerini kendiniz değiştirin — veriler etkilenmez", "Change texts, menu and report details yourself — data is not affected", "غيّر النصوص والقائمة وبيانات التقارير بنفسك" ], name: [ "Site İçeriği", "Site Content", "محتوى الموقع" ], items: [ "texts", "about", "companyProfile", "menu", "report", "announcement", "design", "log" ] },
   { sec: "data", ic: "database", sub: [ "Verilerinizi koruma ve geri yükleme", "Protect and restore your data", "احمي بياناتك واستعيدها" ], name: [ "Veri & Yedek", "Data & Backup", "البيانات والنسخ الاحتياطي" ], items: [ "dataLog", "backup", "fullBackup", "backupHistory", "restore" ] },
   { sec: "fin", ic: "chart", sub: [ "Takip ve paylaşım", "Tracking and sharing", "المتابعة والمشاركة" ], name: [ "Finans & Paylaşım", "Finance & Sharing", "المالية والمشاركة" ], items: [ "advances", "finance", "copyLink" ] },
   { sec: "meetings", ic: "file", sub: [ "Danışman ve toplantı tutanakları", "Consultant and meeting minutes", "محاضر الاستشاري والاجتماعات" ], name: [ "Toplantılar", "Meetings", "الاجتماعات" ], items: [ "advisorMeetings" ] }
@@ -70777,6 +70769,7 @@ const AHUB_ITEMS = {
   finance: { ic: "wallet", name: [ "Gelir & Gider", "Income & Expenses", "الإيرادات والمصروفات" ], sub: [ "Gelir ve gider takibi", "Track income and expenses", "متابعة الإيرادات والمصروفات" ] },
   copyLink: { ic: "link", name: [ "Bağlantıyı Kopyala", "Copy Link", "نسخ الرابط" ], sub: [ "Bu ekranın adresini paylaş", "Share this screen's link", "مشاركة رابط الشاشة دي" ] },
   advances: { ic: "wallet", name: [ "Avans Talepleri", "Advance Requests", "طلبات السلفة" ], sub: [ "Personelin avans talepleri: onayla, imzala, gönder", "Staff advance requests: approve, sign, send", "طلبات السلفة من الموظفين: وافق ووقّع وابعت" ] },
+  companyProfile: { ic: "building", name: [ "Şirket Profili", "Company Profile", "ملف الشركة" ], sub: [ "Tanıtım, organizasyon şeması, kurumsal sunum belgeleri", "Introduction, org chart and corporate presentation documents", "التعريف والهيكل التنظيمي والعرض المؤسسي" ] },
   advisorMeetings: { ic: "file", name: [ "Danışman Toplantı Tutanakları", "Consultant Meeting Minutes", "محاضر اجتماعات الاستشاري" ], sub: [ "Madde, karar ve termin takibi", "Item, decision and due-date tracking", "متابعة البنود والقرارات والمواعيد" ] }
 };
 // Simge: "n:<ad>" = kabuğun çizgi simgesi (sol menüdekiyle aynı set), yoksa merkezin kendi simgesi
@@ -86081,7 +86074,7 @@ function mtWeekMail() {
   document.addEventListener("visibilitychange", sync);
   setTimeout(sync, 800);
 })();
-const EMS_BUILD = "2026-11-22 12:04";
+const EMS_BUILD = "2026-11-21 15:42";
 (function () {
   const t = (tr, en, ar) => typeof t3 === "function" ? t3(tr, en, ar) : tr;
   // Sürüm saati İstanbul saatiyle (UTC+3, yaz/kış saati yok) yazılır; ekranda izleyenin yerel saatine çevrilir (Mısır'da kış saati UTC+2 olunca 1 saat fark oluşuyordu) /
